@@ -1,6 +1,6 @@
-# HostLens Architecture
+# NativeRelay Architecture
 
-HostLens is designed as a layered system:
+NativeRelay is designed as a layered system:
 
 ```text
 ┌─────────────────────────────────────────────┐
@@ -11,7 +11,7 @@ HostLens is designed as a layered system:
                        │
                        ▼
 ┌─────────────────────────────────────────────┐
-│                  HostLens Core               │
+│                  NativeRelay Core               │
 │                                             │
 │  Event Model · Normalization · Capabilities │
 └──────────────────────┬──────────────────────┘
@@ -38,7 +38,7 @@ The central architectural rule is:
 
 ## 1. Core
 
-The HostLens core should remain as platform-independent as possible.
+The NativeRelay core should remain as platform-independent as possible.
 
 Its responsibilities include:
 
@@ -77,7 +77,7 @@ A collector:
 1. connects to a native telemetry mechanism
 2. receives an operating-system event
 3. extracts the relevant information
-4. converts it into the HostLens event model
+4. converts it into the NativeRelay event model
 5. reports capability or collection limitations
 
 Conceptually:
@@ -91,7 +91,7 @@ Native OS event
 └──────┬───────┘
        │
        ▼
-HostLens event
+NativeRelay event
 ```
 
 Collectors should not reinterpret events beyond what is necessary to normalize them.
@@ -105,7 +105,7 @@ Platform-specific code should be isolated behind collector interfaces.
 A consumer should be able to use:
 
 ```text
-HostLens API
+NativeRelay API
 ```
 
 without directly depending on:
@@ -116,7 +116,7 @@ Windows APIs
 macOS APIs
 ```
 
-This allows the same application to consume HostLens events while the underlying collection mechanism changes by platform.
+This allows the same application to consume NativeRelay events while the underlying collection mechanism changes by platform.
 
 The abstraction should not erase meaningful platform differences.
 
@@ -126,7 +126,7 @@ The abstraction should not erase meaningful platform differences.
 
 Not every platform can provide every event with the same reliability or permissions.
 
-HostLens therefore treats capabilities as part of the API.
+NativeRelay therefore treats capabilities as part of the API.
 
 A consumer should be able to ask:
 
@@ -137,7 +137,7 @@ What can this host observe?
 rather than assuming:
 
 ```text
-Every HostLens installation supports every event.
+Every NativeRelay installation supports every event.
 ```
 
 Conceptually:
@@ -159,7 +159,7 @@ The actual capability schema will be defined separately in the event-model and p
 
 A common abstraction becomes dangerous when it hides unsupported behavior.
 
-HostLens should prefer:
+NativeRelay should prefer:
 
 ```text
 unsupported
@@ -179,7 +179,7 @@ when the platform cannot actually provide the requested telemetry.
 
 Operating systems describe similar activity differently.
 
-HostLens translates those native representations into common event types.
+NativeRelay translates those native representations into common event types.
 
 For example:
 
@@ -238,7 +238,7 @@ The intended flow is:
        │
        ▼
 ┌──────────────┐
-│ HostLens     │
+│ NativeRelay     │
 │ Event Stream  │
 └──────┬───────┘
        │
@@ -257,13 +257,13 @@ The consumer may then:
 * derive higher-level information
 * trigger an action
 
-HostLens itself should avoid making application-specific conclusions.
+NativeRelay itself should avoid making application-specific conclusions.
 
 ---
 
 ## 7. Evidence boundaries
 
-HostLens distinguishes between three levels of information.
+NativeRelay distinguishes between three levels of information.
 
 ### Observed
 
@@ -289,7 +289,7 @@ A conclusion made by a consuming application.
 Agent X accessed credentials.
 ```
 
-HostLens should primarily provide **observed evidence** and, where appropriate, well-defined derived information.
+NativeRelay should primarily provide **observed evidence** and, where appropriate, well-defined derived information.
 
 Interpretation belongs to the consumer.
 
@@ -299,7 +299,7 @@ This makes the system more useful for debugging, security, and forensic applicat
 
 ## 8. Process attribution
 
-Process attribution is an important part of HostLens.
+Process attribution is an important part of NativeRelay.
 
 A useful event should provide enough process context for consumers to correlate activity.
 
@@ -316,7 +316,7 @@ PID 4821
       └── ProcessExited
 ```
 
-Where the underlying platform supports it, HostLens should preserve information such as:
+Where the underlying platform supports it, NativeRelay should preserve information such as:
 
 * process ID
 * parent process ID
@@ -357,7 +357,7 @@ does not automatically mean:
 file contents were read
 ```
 
-HostLens should preserve these distinctions.
+NativeRelay should preserve these distinctions.
 
 Possible file event categories include:
 
@@ -372,7 +372,7 @@ FileRenamed
 
 The actual availability of each event depends on the platform collector.
 
-HostLens should not manufacture a stronger event from a weaker observation.
+NativeRelay should not manufacture a stronger event from a weaker observation.
 
 ---
 
@@ -395,7 +395,7 @@ Network events should only be added once their platform-specific semantics and c
 
 ## 11. Local-first architecture
 
-HostLens does not require a remote service.
+NativeRelay does not require a remote service.
 
 The intended architecture is:
 
@@ -403,7 +403,7 @@ The intended architecture is:
 Operating System
        │
        ▼
-   HostLens
+   NativeRelay
        │
        ▼
 Local Application
@@ -413,7 +413,7 @@ No cloud component is required for collection or normalization.
 
 A consuming application may choose to transmit events elsewhere, but that decision belongs to the application.
 
-This separation keeps HostLens useful for:
+This separation keeps NativeRelay useful for:
 
 * local developer tools
 * debugging
@@ -425,7 +425,7 @@ This separation keeps HostLens useful for:
 
 ## 12. Privacy boundaries
 
-HostLens should collect the minimum information necessary for the requested event.
+NativeRelay should collect the minimum information necessary for the requested event.
 
 For example:
 
@@ -449,12 +449,12 @@ Sensitive information should only be collected when explicitly required by a sup
 
 ## 13. Consumer model
 
-HostLens is intended to be useful both as a library and as a standalone developer tool.
+NativeRelay is intended to be useful both as a library and as a standalone developer tool.
 
 Conceptually:
 
 ```text
-                 HostLens
+                 NativeRelay
                     │
         ┌───────────┴───────────┐
         ▼                       ▼
@@ -472,7 +472,7 @@ The CLI should consume the same core interfaces exposed to other applications ra
 
 ## 14. AgentTrace integration
 
-AgentTrace is one of the motivating use cases for HostLens.
+AgentTrace is one of the motivating use cases for NativeRelay.
 
 Today, AgentTrace has to reason about:
 
@@ -484,10 +484,10 @@ process tree
 workspace activity
 ```
 
-HostLens can eventually provide:
+NativeRelay can eventually provide:
 
 ```text
-HostLens
+NativeRelay
    ↓
 native process/file events
    ↓
@@ -504,7 +504,7 @@ AgentTrace can then focus on its actual domain:
 * associating activity with workspaces
 * building evidence timelines
 
-HostLens remains responsible for host-level observation.
+NativeRelay remains responsible for host-level observation.
 
 This separation allows both projects to evolve independently.
 
@@ -512,7 +512,7 @@ This separation allows both projects to evolve independently.
 
 ## 15. What the architecture deliberately avoids
 
-HostLens should avoid becoming a large abstraction layer that attempts to expose every operating-system feature.
+NativeRelay should avoid becoming a large abstraction layer that attempts to expose every operating-system feature.
 
 The project should not initially attempt to normalize:
 
@@ -538,7 +538,7 @@ The architecture should eventually provide:
                        │
                        ▼
                ┌──────────────┐
-               │   HostLens   │
+               │   NativeRelay   │
                │              │
                │ Common Model │
                └──────┬───────┘
@@ -550,7 +550,7 @@ The architecture should eventually provide:
 
 The success criterion is not:
 
-> "HostLens supports every operating system feature."
+> "NativeRelay supports every operating system feature."
 
 The success criterion is:
 
@@ -569,7 +569,7 @@ The following decisions remain intentionally open:
 * Which events should be guaranteed across platforms?
 * Which events should remain platform-specific?
 * How should backpressure be handled?
-* Should HostLens provide persistence or only streaming?
+* Should NativeRelay provide persistence or only streaming?
 * How should collectors be loaded and selected?
 * What should the stable public API look like?
 
@@ -586,11 +586,11 @@ The first goal is to prove that the following pipeline works reliably:
 ```text
 Linux native telemetry
         ↓
-HostLens collector
+NativeRelay collector
         ↓
 normalized events
         ↓
-HostLens API
+NativeRelay API
         ↓
 consumer
 ```

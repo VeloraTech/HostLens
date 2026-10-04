@@ -2,14 +2,14 @@
 
 ## Reporting a Vulnerability
 
-If you believe you have discovered a security vulnerability in HostLens, please report it privately rather than opening a public GitHub issue.
+If you believe you have discovered a security vulnerability in NativeRelay, please report it privately rather than opening a public GitHub issue.
 
 When reporting a vulnerability, include as much of the following information as possible:
 
 * Description of the vulnerability
 * Affected component
 * Affected platform
-* HostLens version or commit
+* NativeRelay version or commit
 * Steps to reproduce
 * Expected behavior
 * Actual behavior
@@ -31,35 +31,35 @@ Examples include:
 * Memory-safety issues
 * Command or code execution vulnerabilities
 * Authentication or authorization issues in future networked components
-* Vulnerabilities that could allow a malicious process to interfere with HostLens
+* Vulnerabilities that could allow a malicious process to interfere with NativeRelay
 
 If you are unsure whether an issue qualifies as a security vulnerability, report it privately.
 
 ## Supported Versions
 
-HostLens is currently an early-stage project.
+NativeRelay is currently an early-stage project.
 
-Security fixes are generally applied to the latest development version. Users should keep their HostLens installation up to date when possible.
+Security fixes are generally applied to the latest development version. Users should keep their NativeRelay installation up to date when possible.
 
 As the project matures, supported versions and security-maintenance periods will be documented here.
 
 ## Security Boundaries
 
-HostLens is intended to observe host-level system events.
+NativeRelay is intended to observe host-level system events.
 
 Depending on the platform and collector, operation may require elevated operating-system permissions.
 
-These permissions are platform-specific and should not be treated as evidence that HostLens itself is trusted or safe in every environment.
+These permissions are platform-specific and should not be treated as evidence that NativeRelay itself is trusted or safe in every environment.
 
 Collectors should request only the permissions required for their documented functionality.
 
-HostLens should also avoid collecting sensitive information that is not necessary for the requested observation.
+NativeRelay should also avoid collecting sensitive information that is not necessary for the requested observation.
 
 For example, observing file activity should not require capturing the contents of the file.
 
 ## Telemetry and Privacy
 
-HostLens is designed to operate locally.
+NativeRelay is designed to operate locally.
 
 The project does not require a hosted telemetry service for its core functionality.
 
@@ -72,9 +72,9 @@ Collected events may contain sensitive host information such as:
 * Network information
 * User or application metadata
 
-Consumers of HostLens are responsible for handling collected events appropriately.
+Consumers of NativeRelay are responsible for handling collected events appropriately.
 
-Users should review collector configuration and permissions before running HostLens on sensitive systems.
+Users should review collector configuration and permissions before running NativeRelay on sensitive systems.
 
 ## Vulnerability Disclosure
 
@@ -105,10 +105,10 @@ Contributors can help by:
 * Testing platform-specific security boundaries
 * Documenting security assumptions
 
-Security research should follow the same evidence-based approach used throughout HostLens: clearly distinguish observed behavior from assumptions and conclusions.
+Security research should follow the same evidence-based approach used throughout NativeRelay: clearly distinguish observed behavior from assumptions and conclusions.
 
 ## Scope
 
-This policy applies to the HostLens project and its official source code.
+This policy applies to the NativeRelay project and its official source code.
 
-Third-party applications built using HostLens may introduce their own vulnerabilities or security requirements. Such issues should generally be reported to the maintainers of the affected application.
+Third-party applications built using NativeRelay may introduce their own vulnerabilities or security requirements. Such issues should generally be reported to the maintainers of the affected application.

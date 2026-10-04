@@ -1,10 +1,10 @@
-# HostLens Platform Support
+# NativeRelay Platform Support
 
-HostLens is designed to provide a common event interface across operating systems while preserving the differences between their native telemetry systems.
+NativeRelay is designed to provide a common event interface across operating systems while preserving the differences between their native telemetry systems.
 
 Cross-platform support does **not** mean identical capabilities.
 
-A collector is considered supported only when HostLens can provide useful, documented, and sufficiently reliable telemetry on that platform.
+A collector is considered supported only when NativeRelay can provide useful, documented, and sufficiently reliable telemetry on that platform.
 
 ---
 
@@ -22,9 +22,9 @@ The implementation status may change as platform research progresses.
 
 # Linux
 
-Linux is the initial reference platform for HostLens.
+Linux is the initial reference platform for NativeRelay.
 
-Linux provides several low-level mechanisms for observing system activity. For filesystem activity, HostLens is primarily investigating `fanotify` rather than treating ordinary filesystem change watching as sufficient.
+Linux provides several low-level mechanisms for observing system activity. For filesystem activity, NativeRelay is primarily investigating `fanotify` rather than treating ordinary filesystem change watching as sufficient.
 
 `fanotify` can report events such as file access, open, modification, close, and filesystem changes. Events can include the PID of the process that caused the event.
 
@@ -37,7 +37,7 @@ Linux process
   fanotify
       │
       ▼
-HostLens collector
+NativeRelay collector
       │
       ▼
 normalized event
@@ -60,13 +60,13 @@ FAN_MOVE
 
 The exact events available depend on the fanotify configuration and Linux version.
 
-Linux can also expose permission events such as `FAN_OPEN_PERM` and `FAN_ACCESS_PERM`, but these have different semantics from ordinary notification events and require specific fanotify classes. HostLens should not treat permission events as interchangeable with ordinary observations.
+Linux can also expose permission events such as `FAN_OPEN_PERM` and `FAN_ACCESS_PERM`, but these have different semantics from ordinary notification events and require specific fanotify classes. NativeRelay should not treat permission events as interchangeable with ordinary observations.
 
 ### Process attribution
 
 A fanotify event can contain the PID of the process that caused the event. With appropriate configuration, thread IDs can also be reported.
 
-This makes Linux a useful reference platform for HostLens's process-attributed file-event model.
+This makes Linux a useful reference platform for NativeRelay's process-attributed file-event model.
 
 ### Important limitation
 
@@ -74,7 +74,7 @@ Linux telemetry is not automatically complete.
 
 For example, fanotify exposes a queue and defines `FAN_Q_OVERFLOW` when the event queue exceeds its limit. A collector therefore needs an explicit strategy for detecting and communicating lost events.
 
-HostLens should never silently present a potentially incomplete event stream as complete.
+NativeRelay should never silently present a potentially incomplete event stream as complete.
 
 ### Initial Linux target
 
@@ -87,7 +87,7 @@ Process-attributed file activity
        +
 Event loss detection
        +
-Normalized HostLens events
+Normalized NativeRelay events
 ```
 
 The initial implementation should remain focused rather than attempting to expose every Linux kernel event.
@@ -109,7 +109,7 @@ Windows kernel/providers
          ETW
           │
           ▼
-HostLens Windows collector
+NativeRelay Windows collector
           │
           ▼
 normalized events
@@ -133,7 +133,7 @@ Kernel tracing configuration also exposes file-I/O related flags, including file
 
 ### Why Windows requires separate research
 
-The existence of ETW does not mean HostLens can immediately provide an identical event model to Linux.
+The existence of ETW does not mean NativeRelay can immediately provide an identical event model to Linux.
 
 The Windows collector needs to determine:
 
@@ -183,7 +183,7 @@ macOS
 Endpoint Security
   │
   ▼
-HostLens collector
+NativeRelay collector
   │
   ▼
 normalized events

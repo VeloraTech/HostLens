@@ -1,6 +1,6 @@
-# HostLens Roadmap
+# NativeRelay Roadmap
 
-HostLens is being developed incrementally.
+NativeRelay is being developed incrementally.
 
 The first goal is not to support every operating system or every type of host telemetry. The goal is to establish a reliable event model and a working native collector that can prove the architecture.
 
@@ -25,7 +25,7 @@ Establish the project structure and define the contracts that future implementat
 
 ### Outcome
 
-HostLens has a stable enough foundation for implementation to begin without prematurely locking the project into one operating system's design.
+NativeRelay has a stable enough foundation for implementation to begin without prematurely locking the project into one operating system's design.
 
 ---
 
@@ -66,7 +66,7 @@ The collector should be capable of producing normalized events for supported ope
 
 ### Outcome
 
-A real Linux system can produce HostLens events that applications can consume without directly interacting with Linux-specific telemetry APIs.
+A real Linux system can produce NativeRelay events that applications can consume without directly interacting with Linux-specific telemetry APIs.
 
 ---
 
@@ -74,7 +74,7 @@ A real Linux system can produce HostLens events that applications can consume wi
 
 **Status: Planned**
 
-Make HostLens practical for other software to consume.
+Make NativeRelay practical for other software to consume.
 
 ### Goals
 
@@ -85,12 +85,12 @@ Make HostLens practical for other software to consume.
 * [ ] Support graceful collector shutdown
 * [ ] Define error handling
 * [ ] Define lifecycle behavior
-* [ ] Provide examples for embedding HostLens
+* [ ] Provide examples for embedding NativeRelay
 * [ ] Add API documentation
 
 ### Outcome
 
-A developer can integrate HostLens into another application without needing to understand the underlying operating-system collector.
+A developer can integrate NativeRelay into another application without needing to understand the underlying operating-system collector.
 
 ---
 
@@ -98,15 +98,15 @@ A developer can integrate HostLens into another application without needing to u
 
 **Status: Planned**
 
-Provide a small command-line interface for inspecting HostLens directly.
+Provide a small command-line interface for inspecting NativeRelay directly.
 
 Possible usage:
 
 ```text
-hostlens run
-hostlens events
-hostlens capabilities
-hostlens doctor
+NativeRelay run
+NativeRelay events
+NativeRelay capabilities
+NativeRelay doctor
 ```
 
 The exact command structure is intentionally not locked yet.
@@ -121,7 +121,7 @@ The exact command structure is intentionally not locked yet.
 * [ ] Provide useful diagnostics
 * [ ] Document CLI usage
 
-The CLI should be useful for development and debugging without turning HostLens into a full system-monitoring dashboard.
+The CLI should be useful for development and debugging without turning NativeRelay into a full system-monitoring dashboard.
 
 ---
 
@@ -149,13 +149,13 @@ Investigate Windows-native telemetry before committing to an implementation.
 * [ ] Define collector architecture
 * [ ] Implement initial process events
 * [ ] Implement initial file events
-* [ ] Map native events into HostLens events
+* [ ] Map native events into NativeRelay events
 * [ ] Document capability differences
 * [ ] Add Windows integration tests
 
 ### Outcome
 
-Windows applications can consume HostLens events through a native collector while retaining the limitations and semantics of Windows telemetry.
+Windows applications can consume NativeRelay events through a native collector while retaining the limitations and semantics of Windows telemetry.
 
 ---
 
@@ -183,13 +183,13 @@ Investigate Apple's Endpoint Security framework and the requirements for distrib
 * [ ] Define collector architecture
 * [ ] Implement initial process events
 * [ ] Implement initial file events
-* [ ] Map native events into HostLens events
+* [ ] Map native events into NativeRelay events
 * [ ] Document capability differences
 * [ ] Add macOS integration tests
 
 ### Outcome
 
-macOS applications can consume HostLens events through a native collector where the required system permissions and deployment conditions are satisfied.
+macOS applications can consume NativeRelay events through a native collector where the required system permissions and deployment conditions are satisfied.
 
 ---
 
@@ -222,7 +222,7 @@ The objective is predictable behavior with clearly documented differences.
 
 **Status: Future**
 
-Only after process and file telemetry are reliable should HostLens expand into additional system events.
+Only after process and file telemetry are reliable should NativeRelay expand into additional system events.
 
 Potential areas include:
 
@@ -258,7 +258,7 @@ New event families should not be added simply to increase the feature list.
 
 **Status: Future**
 
-HostLens becomes more valuable as other tools begin consuming it.
+NativeRelay becomes more valuable as other tools begin consuming it.
 
 Potential consumers include:
 
@@ -278,13 +278,13 @@ Potential consumers include:
 * [ ] Encourage external integrations
 * [ ] Collect feedback from real consumers
 
-AgentTrace is expected to be one of the first serious consumers, but HostLens should remain independent of it.
+AgentTrace is expected to be one of the first serious consumers, but NativeRelay should remain independent of it.
 
 ---
 
 # What We Are Not Building Yet
 
-HostLens is intentionally not starting as:
+NativeRelay is intentionally not starting as:
 
 * a full system-monitoring dashboard
 * a cloud observability platform
@@ -294,7 +294,7 @@ HostLens is intentionally not starting as:
 * a hosted telemetry service
 * a replacement for OS-native observability tools
 
-These may be built by other projects using HostLens.
+These may be built by other projects using NativeRelay.
 
 ---
 
@@ -343,4 +343,4 @@ Consumer ecosystem
 
 The roadmap is deliberately conservative.
 
-HostLens should earn broader platform and event coverage through working implementations rather than promising parity in advance.
+NativeRelay should earn broader platform and event coverage through working implementations rather than promising parity in advance.

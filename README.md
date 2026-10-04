@@ -1,11 +1,11 @@
-# HostLens
+# NativeRelay
 
 > An open-source host event layer that normalizes native OS telemetry into a common event model for developer tools.
 
 [![Status: Early Development](https://img.shields.io/badge/status-early%20development-orange)](ROADMAP.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
-HostLens is an open-source infrastructure project for observing host-level activity and exposing it through a consistent event model.
+NativeRelay is an open-source infrastructure project for observing host-level activity and exposing it through a consistent event model.
 
 The goal is to make system-level telemetry reusable instead of forcing every developer tool to build its own platform-specific implementation.
 
@@ -13,7 +13,7 @@ The goal is to make system-level telemetry reusable instead of forcing every dev
 Developer Tool
       │
       ▼
-   HostLens
+   NativeRelay
       │
       ▼
 Normalized Events
@@ -42,11 +42,11 @@ what happened before and after?
 
 Different operating systems expose this information through different native mechanisms.
 
-HostLens explores a common layer for consuming those events without pretending that every platform provides identical capabilities.
+NativeRelay explores a common layer for consuming those events without pretending that every platform provides identical capabilities.
 
 ## Core idea
 
-HostLens separates **native collection** from a **common event model**.
+NativeRelay separates **native collection** from a **common event model**.
 
 ```json
 {
@@ -61,13 +61,13 @@ HostLens separates **native collection** from a **common event model**.
 
 The underlying platform remains responsible for what can actually be observed.
 
-HostLens normalizes the result.
+NativeRelay normalizes the result.
 
 **Observed evidence is kept separate from interpretation.**
 
 ## Current direction
 
-HostLens is intentionally starting small.
+NativeRelay is intentionally starting small.
 
 | Capability               | Status       |
 | ------------------------ | ------------ |
@@ -86,12 +86,12 @@ Cross-platform support will be added without claiming equivalent coverage where 
 
 ## AgentTrace
 
-HostLens originated from a problem encountered while building [AgentTrace](https://github.com/VeloraTech/AgentTrace).
+NativeRelay originated from a problem encountered while building [AgentTrace](https://github.com/VeloraTech/AgentTrace).
 
-AgentTrace needs to understand activity performed by AI coding agents and their processes. Rather than making AgentTrace responsible for implementing native system telemetry for every operating system, HostLens explores whether that capability can become reusable infrastructure.
+AgentTrace needs to understand activity performed by AI coding agents and their processes. Rather than making AgentTrace responsible for implementing native system telemetry for every operating system, NativeRelay explores whether that capability can become reusable infrastructure.
 
 ```text
-HostLens
+NativeRelay
    │
    │ normalized host events
    ▼
@@ -103,7 +103,7 @@ AgentTrace
    └── activity timeline
 ```
 
-AgentTrace is one potential consumer of HostLens.
+AgentTrace is one potential consumer of NativeRelay.
 
 It is not the only intended one.
 
@@ -127,7 +127,7 @@ More detail:
 
 ## Status
 
-HostLens is **early-stage and open for collaboration**.
+NativeRelay is **early-stage and open for collaboration**.
 
 The hardest part is not collecting one more system event.
 

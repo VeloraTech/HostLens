@@ -1,14 +1,14 @@
-# Contributing to HostLens
+# Contributing to NativeRelay
 
-Thanks for your interest in HostLens.
+Thanks for your interest in NativeRelay.
 
-HostLens is an open-source project exploring a common event layer over native operating-system telemetry for developer tools.
+NativeRelay is an open-source project exploring a common event layer over native operating-system telemetry for developer tools.
 
 The project is still early, so contributions that improve the design, research, documentation, and platform understanding are just as valuable as implementation work.
 
 ## What We Need Help With
 
-HostLens currently has several areas where contributors can make a meaningful impact.
+NativeRelay currently has several areas where contributors can make a meaningful impact.
 
 ### Linux
 
@@ -87,7 +87,7 @@ Observed behavior
 Inference
 ```
 
-This is important because HostLens is intended to represent actual evidence rather than assumptions.
+This is important because NativeRelay is intended to represent actual evidence rather than assumptions.
 
 ---
 
@@ -144,7 +144,7 @@ A collector should not claim support for an event simply because the underlying 
 The repository is currently organized around the following areas:
 
 ```text
-HostLens/
+NativeRelay/
 ├── docs/
 │   ├── architecture.md
 │   ├── event-model.md
@@ -249,7 +249,7 @@ When reporting a bug, include:
 
 * operating system
 * OS version
-* HostLens version or commit
+* NativeRelay version or commit
 * collector being used
 * reproduction steps
 * expected behavior
@@ -287,7 +287,7 @@ You do not need to understand the entire codebase before contributing.
 
 ## Platform Experts
 
-HostLens particularly welcomes contributors familiar with:
+NativeRelay particularly welcomes contributors familiar with:
 
 * Linux kernel interfaces
 * eBPF
@@ -313,4 +313,4 @@ Issues should generally be used for concrete bugs and actionable implementation 
 
 ## License
 
-By contributing to HostLens, you agree that your contributions will be licensed under the project's [MIT License](../LICENSE).
+By contributing to NativeRelay, you agree that your contributions will be licensed under the project's [MIT License](../LICENSE).
