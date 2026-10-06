@@ -8,18 +8,15 @@ The project is still early, so contributions that improve the design, research, 
 
 ## What We Need Help With
 
-NativeRelay currently has several areas where contributors can make a meaningful impact.
+NativeRelay has an initial Linux implementation. Linux integration verification and collector reliability are current priorities; macOS and Windows remain future collectors.
 
 ### Linux
 
-* Native process telemetry
-* File-access telemetry
-* `fanotify` research
-* Process attribution
-* Event-loss handling
-* Permission requirements
-* Collector implementation
-* Integration testing
+* CN_PROC and fanotify live integration testing
+* Kernel permission and coverage research
+* Process connector loss reporting
+* fanotify path and event handling review
+* Reliable create/delete/rename telemetry research
 
 ### Windows
 
@@ -141,7 +138,7 @@ A collector should not claim support for an event simply because the underlying 
 
 ## Project Structure
 
-The repository is currently organized around the following areas:
+The repository is organized around these implementation areas:
 
 ```text
 NativeRelay/
@@ -150,12 +147,15 @@ NativeRelay/
 │   ├── event-model.md
 │   ├── platform-support.md
 │   └── design-principles.md
-├── schemas/
-│   └── events/
-├── crates/
-│   └── core/
+├── nativerelay/
+│   ├── model.py
+│   ├── collector.py
+│   ├── stream.py
+│   └── cli.py
 ├── collectors/
 │   └── linux/
+├── tests/
+├── pyproject.toml
 ├── README.md
 ├── ROADMAP.md
 ├── CONTRIBUTING.md

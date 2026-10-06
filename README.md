@@ -1,140 +1,51 @@
 # NativeRelay
 
-> An open-source host event layer that normalizes native OS telemetry into a common event model for developer tools.
+NativeRelay is a local-first, embeddable operating-system observability layer for developer tools. It normalizes the event interface across platforms, while platform-specific collectors expose different capabilities and coverage.
 
-[![Status: Early Development](https://img.shields.io/badge/status-early%20development-orange)](ROADMAP.md)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+**System telemetry is currently Linux-supported.** macOS and Windows collectors are future work. NativeRelay reports native observations; it does not identify AI agents, infer file contents, or depend on AgentTrace.
 
-NativeRelay is an open-source infrastructure project for observing host-level activity and exposing it through a consistent event model.
+## Phase 1 status
 
-The goal is to make system-level telemetry reusable instead of forcing every developer tool to build its own platform-specific implementation.
+The Linux collector uses the kernel process connector (`NETLINK_CONNECTOR/CN_PROC`) for process fork/exit events and `fanotify` for process-attributed file open/write-close notifications. Filesystem observation requires elevated privileges, is scoped to a user-selected directory (kernel monitoring is mounted-filesystem-wide, then filtered), and is best effort. Process events are independently available only when the kernel permits connector subscription.
 
-```text
-Developer Tool
-      │
-      ▼
-   NativeRelay
-      │
-      ▼
-Normalized Events
-      │
- ┌────┼────┐
- ▼    ▼    ▼
-Linux Win  macOS
+| Event | Linux status | Notes |
+|---|---|---|
+| `process.started`, `process.exited` | Best effort | Kernel fork/leader-exit notifications; short-lived forked processes are included when notifications arrive. A leader exit does not guarantee all threads in its group have stopped. |
+| `file.opened` | Best effort | `fanotify` open event with PID and path for the selected scope. |
+| `file.modified` | Best effort | `fanotify` modification notification; does not report changed bytes or guarantee durable storage. |
+| `file.created`, `file.deleted`, `file.renamed` | Unsupported | Not emitted; no inference from directory watchers. |
+
+Unsupported, permission-denied, and unavailable capabilities are visible through the capability API/CLI. Queue loss and collector errors are available through collector health. No file contents or environment values are read. Process argv collection is opt-in because arguments can contain secrets.
+
+## Run locally
+
+Python 3.11 or newer, Linux, and no third-party runtime dependencies are required. From a checkout:
+
+```sh
+python -m nativerelay.cli capabilities --scope /path/to/workspace
+python -m nativerelay.cli observe --scope /path/to/workspace
+python -m nativerelay.cli observe --scope /path/to/workspace --json
 ```
 
-## Why?
+The process connector may be unavailable depending on kernel configuration and privilege; subscribing to its netlink multicast group generally requires root or `CAP_NET_ADMIN`. `fanotify` mount monitoring requires `CAP_SYS_ADMIN`; the CLI reports each degraded state. Use least privilege that satisfies the kernel on the target system. `--include-command` opts into process argument collection and should be used with care.
 
-A filesystem watcher can tell you:
+## Embed
 
-```text
-file changed
-```
+The platform-neutral event model, bounded stream, and collector contract live in `nativerelay`. A consumer can receive events from `EventStream.receive(timeout=...)`; events serialize through `Event.to_json()`. Linux-specific collection is isolated in `collectors.linux`.
 
-But many applications need to know:
+## Documentation
 
-```text
-which process opened the file?
-which process created it?
-which process modified it?
-what happened before and after?
-```
+- [Architecture](docs/architecture.md)
+- [Event model](docs/event-model.md)
+- [Linux support and limits](docs/linux-support.md)
+- [Platform support](docs/platform-support.md)
+- [Privacy](docs/privacy.md)
+- [Development and testing](docs/development.md)
+- [Roadmap](ROADMAP.md)
+- [Design principles](docs/design-principles.md)
 
-Different operating systems expose this information through different native mechanisms.
+## Project status
 
-NativeRelay explores a common layer for consuming those events without pretending that every platform provides identical capabilities.
+Phase 1 is an initial, Linux-only implementation and has not been validated on a Linux host in this development environment. Treat the API as pre-release; do not rely on it for complete audit coverage. See the capability and limitations documentation before use.
 
-## Core idea
-
-NativeRelay separates **native collection** from a **common event model**.
-
-```json
-{
-  "type": "file.access",
-  "operation": "open",
-  "path": "/workspace/.env",
-  "pid": 4821,
-  "platform": "linux",
-  "confidence": "observed"
-}
-```
-
-The underlying platform remains responsible for what can actually be observed.
-
-NativeRelay normalizes the result.
-
-**Observed evidence is kept separate from interpretation.**
-
-## Current direction
-
-NativeRelay is intentionally starting small.
-
-| Capability               | Status       |
-| ------------------------ | ------------ |
-| Common event model       | Designing |
-| Linux process events     | Planned   |
-| Linux file-access events | Planned   |
-| Process attribution      | Planned   |
-| Embeddable API           | Planned   |
-| Windows                  | Research     |
-| macOS                    | Research     |
-| Network events           | Later        |
-
-Linux is the initial reference platform because it provides strong low-level observability primitives for the first implementation.
-
-Cross-platform support will be added without claiming equivalent coverage where the underlying OS cannot provide it.
-
-## AgentTrace
-
-NativeRelay originated from a problem encountered while building [AgentTrace](https://github.com/VeloraTech/AgentTrace).
-
-AgentTrace needs to understand activity performed by AI coding agents and their processes. Rather than making AgentTrace responsible for implementing native system telemetry for every operating system, NativeRelay explores whether that capability can become reusable infrastructure.
-
-```text
-NativeRelay
-   │
-   │ normalized host events
-   ▼
-AgentTrace
-   │
-   ├── agent identity
-   ├── process trees
-   ├── sessions
-   └── activity timeline
-```
-
-AgentTrace is one potential consumer of NativeRelay.
-
-It is not the only intended one.
-
-## Design principles
-
-* **Native underneath** — use the capabilities of each operating system.
-* **Normalized above** — provide a consistent event model.
-* **Evidence first** — distinguish observations from conclusions.
-* **Local-first** — no cloud service required.
-* **Capability-aware** — unsupported telemetry should be explicit.
-* **Embeddable** — useful as a library, not only a CLI.
-
-More detail:
-
-* [Architecture](docs/architecture.md)
-* [Event Model](docs/event-model.md)
-* [Platform Support](docs/platform-support.md)
-* [Design Principles](docs/design-principles.md)
-* [Roadmap](ROADMAP.md)
-* [Contributing](CONTRIBUTING.md)
-
-## Status
-
-NativeRelay is **early-stage and open for collaboration**.
-
-The hardest part is not collecting one more system event.
-
-It is designing a useful abstraction across operating systems without hiding the limitations of the underlying platform.
-
-If you work with operating-system internals, observability, security, developer tooling, or native systems programming, contributions and technical feedback are welcome.
-
-## License
-
-MIT
+MIT licensed. No cloud service, account, network connection, or remote telemetry is required.
