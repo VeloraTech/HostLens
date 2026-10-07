@@ -26,6 +26,7 @@ NETLINK_CONNECTOR = 11
 CN_IDX_PROC = 1
 CN_VAL_PROC = 1
 NLMSG_DONE = 3
+NLMSG_OVERRUN = 4
 PROC_EVENT_FORK = 0x00000001
 PROC_EVENT_EXIT = 0x80000000
 PROC_CN_MCAST_LISTEN = 1
@@ -69,7 +70,10 @@ class LinuxCollector(Collector):
     def capabilities(self): return self._caps
 
     @property
-    def status(self): return {**self.health, "errors": list(self.health["errors"])}
+    def status(self):
+        losses = self._stream.losses if self._stream is not None else getattr(self, "_last_stream_losses", {})
+        generation = self._stream.loss_generation if self._stream is not None else getattr(self, "_last_loss_generation", 0)
+        return {**self.health, "errors": list(self.health["errors"]), "losses": losses, "loss_generation": generation}
 
     def start(self, stream: EventStream):
         if self._stream is not None: raise RuntimeError("collector already started")
@@ -79,6 +83,7 @@ class LinuxCollector(Collector):
         self.health = {"process": "not_started", "filesystem": "not_started", "dropped": 0, "errors": []}
         self._caps = self._initial_capabilities()
         self._stream = stream
+        self._last_stream_losses = {}
         self._start_process()
         self._start_filesystem()
 
@@ -91,6 +96,8 @@ class LinuxCollector(Collector):
                 else: sock.close()
             except OSError: pass
         for thread in self._threads: thread.join(timeout=2)
+        self._last_stream_losses = self._stream.losses
+        self._last_loss_generation = self._stream.loss_generation
         self._stream.close()
         self._sockets.clear(); self._threads.clear(); self._stream = None
 
@@ -118,7 +125,11 @@ class LinuxCollector(Collector):
                 if remaining <= 0:
                     raise TimeoutError("CN_PROC sent no subscription acknowledgement; process events may be disabled or this PID namespace may not be the kernel's initial namespace")
                 sock.settimeout(remaining)
-                self._parse_proc_packet(sock.recv(65536))
+                packet = sock.recv(65536)
+                try: self._parse_proc_packet(packet)
+                except (ValueError, struct.error, OSError) as exc:
+                    self.health["errors"].append(f"malformed process event during startup: {exc}")
+                    self._record_native_loss("cn_proc_malformed_packet", count=None)
                 if self.health["process"] in (CollectorStatus.PERMISSION_DENIED.value, CollectorStatus.UNAVAILABLE.value): break
             if self.health["process"] != "available":
                 sock.close()
@@ -140,14 +151,20 @@ class LinuxCollector(Collector):
             try: self._parse_proc_packet(packet)
             except (ValueError, struct.error, OSError) as exc:
                 self.health["errors"].append(f"malformed process event: {exc}")
+                self._record_native_loss("cn_proc_malformed_packet", count=None)
 
     def _parse_proc_packet(self, packet):
-        # nlmsghdr(16) + cn_msg header(20) + proc_event header(16)
+        # Netlink header (16), connector header (20), then proc_event data.
         offset = 0
         while offset < len(packet):
-            if len(packet) - offset < 36: raise ValueError("truncated netlink connector message")
-            nl_len, _, _, _, _ = struct.unpack_from("=IHHII", packet, offset)
-            if nl_len < 36 or offset + nl_len > len(packet): raise ValueError("invalid netlink message length")
+            if len(packet) - offset < 16: raise ValueError("truncated netlink header")
+            nl_len, nl_type, _, _, _ = struct.unpack_from("=IHHII", packet, offset)
+            if nl_len < 16 or offset + nl_len > len(packet): raise ValueError("invalid netlink message length")
+            if nl_type == NLMSG_OVERRUN:
+                self._record_native_loss("cn_proc_netlink_overrun", count=None)
+                offset += (nl_len + 3) & ~3
+                continue
+            if len(packet) - offset < 36 or nl_len < 36: raise ValueError("truncated netlink connector message")
             cn = offset + 16
             idx, val = struct.unpack_from("=II", packet, cn)
             payload_len = struct.unpack_from("=H", packet, cn + 16)[0]
@@ -174,7 +191,6 @@ class LinuxCollector(Collector):
                         self._emit_process(EventType.PROCESS_EXITED, tgid, None,
                                            {"exitStatus": code, "exitSignal": sig, "leaderThreadExit": True})
             offset += nl_len
-
     def _process_info(self, pid, parent_pid):
         proc = Path("/proc") / str(pid)
         try:
@@ -246,22 +262,27 @@ class LinuxCollector(Collector):
             except OSError:
                 if not self._stop.is_set(): self._failure("filesystem", OSError("fanotify descriptor closed"))
                 return
-            offset = 0
-            while offset + FANOTIFY_METADATA_LEN <= len(data):
-                try:
-                    length, version, _, metadata_len, mask, event_fd, pid = struct.unpack_from(FAN_EVENT_METADATA_FMT, data, offset)
-                    if length < FANOTIFY_METADATA_LEN or offset + length > len(data): raise ValueError("invalid fanotify event length")
-                    if version != FANOTIFY_METADATA_VERSION or metadata_len < FANOTIFY_METADATA_LEN or metadata_len > length: raise ValueError("unsupported fanotify metadata version")
-                    if mask & FAN_Q_OVERFLOW:
-                        self.health["dropped"] += 1
-                    elif event_fd >= 0:
-                        self._handle_file_event(mask, event_fd, pid)
-                    offset += length
-                except (ValueError, struct.error) as exc:
-                    self.health["errors"].append(f"malformed fanotify event: {exc}"); break
-            if offset < len(data) and len(data) - offset < FANOTIFY_METADATA_LEN:
-                self.health["errors"].append("truncated fanotify metadata")
+            self._parse_fanotify_data(data)
 
+    def _parse_fanotify_data(self, data):
+        offset = 0
+        while offset + FANOTIFY_METADATA_LEN <= len(data):
+            try:
+                length, version, _, metadata_len, mask, event_fd, pid = struct.unpack_from(FAN_EVENT_METADATA_FMT, data, offset)
+                if length < FANOTIFY_METADATA_LEN or offset + length > len(data): raise ValueError("invalid fanotify event length")
+                if version != FANOTIFY_METADATA_VERSION or metadata_len < FANOTIFY_METADATA_LEN or metadata_len > length: raise ValueError("unsupported fanotify metadata version")
+                if mask & FAN_Q_OVERFLOW:
+                    self._record_native_loss("fanotify_queue_overflow", count=None)
+                elif event_fd >= 0:
+                    self._handle_file_event(mask, event_fd, pid)
+                offset += length
+            except (ValueError, struct.error) as exc:
+                self.health["errors"].append(f"malformed fanotify event: {exc}")
+                self._record_native_loss("fanotify_malformed_event", count=None)
+                break
+        if offset < len(data) and len(data) - offset < FANOTIFY_METADATA_LEN:
+            self.health["errors"].append("truncated fanotify metadata")
+            self._record_native_loss("fanotify_truncated_metadata", count=None)
     def _handle_file_event(self, mask, fd, pid):
         try:
             path = Path(os.readlink(f"/proc/self/fd/{fd}")).resolve(strict=False)
@@ -270,10 +291,21 @@ class LinuxCollector(Collector):
                 self._publish(Event(EventType.FILE_OPENED, "linux", self.name, self._process_info(pid, None), Resource("file", str(path))))
             if mask & FAN_MODIFY:
                 self._publish(Event(EventType.FILE_MODIFIED, "linux", self.name, self._process_info(pid, None), Resource("file", str(path))))
-        except (OSError, ValueError) as exc: self.health["errors"].append(f"file event resolution: {exc}")
+        except (OSError, ValueError) as exc:
+            self.health["errors"].append(f"file event resolution: {exc}")
+            lost = int(bool(mask & FAN_OPEN)) + int(bool(mask & FAN_MODIFY))
+            if lost: self._record_native_loss("fanotify_path_resolution", count=lost)
         finally:
             try: os.close(fd)
             except OSError: pass
+
+    def _record_native_loss(self, reason, *, count):
+        """Record detected native loss and reserve a collector sequence marker."""
+        with self._publish_lock:
+            sequence = self._sequence
+            self._sequence += 1
+            if self._stream is not None:
+                self._stream.report_loss(self.name, reason, count=count, sequence=sequence)
 
     def _publish(self, event):
         with self._publish_lock:

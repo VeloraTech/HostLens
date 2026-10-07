@@ -26,7 +26,7 @@ This is process-attributed kernel file notification, not a generic directory wat
 
 Creation, deletion, and rename require reliable name/event correlation beyond this initial descriptor-based implementation. They are not inferred from close or open events.
 
-`FAN_Q_OVERFLOW` is counted in collector health. Unresolvable paths, event parse errors, permission failures, and bounded stream drops are surfaced in health/status. The implementation does not read file contents, hash files, read environment variables, or send telemetry remotely.
+`FAN_Q_OVERFLOW` is reported in the loss snapshot with an unknown lost-event count and a collector sequence marker. Malformed/truncated records are reported as unknown-count loss; path resolution failures report the number of masked operations lost. Bounded stream drops have an exact count and rejected-event sequence. These losses are detected and reported, never recovered. `status["dropped"]` counts stream-full rejections only; `status["losses"]` is the unified source/reason ledger. The implementation does not read file contents, hash files, read environment variables, or send telemetry remotely.
 
 ## Capability and permission behavior
 
@@ -43,6 +43,6 @@ Deterministic tests exercise normalized models, stream limits, connector packet 
 
 The controlled CN_PROC process lifecycle and parent PID test and the fanotify open/modify attribution test passed in the privileged GitHub Actions Linux integration workflow targeting Ubuntu 22.04 and 24.04. The current development host's WSL2 kernel (`6.6.87.2-microsoft-standard-WSL2`) also passed the root fanotify test; the unprivileged fanotify test correctly reported `EPERM`. CN_PROC did not acknowledge a subscription in WSL because the distro uses a non-initial PID namespace. The kernel's CN_PROC handler returns without acknowledging requests outside the initial PID/user namespaces ([kernel handler](https://github.com/torvalds/linux/blob/master/drivers/connector/cn_proc.c#L1815-L1829)).
 
-CN_PROC loss is not yet counted precisely. A consumer must treat process coverage as best effort even when the capability status is `available`. Kernel/netlink loss handling is a Phase 2 reliability task.
+A surfaced netlink `NLMSG_OVERRUN` is reported with an unknown loss count and sequence marker. CN_PROC/kernel loss may occur without a surfaced overrun, and the implementation cannot provide precise process-loss accounting. A consumer must treat process coverage as best effort even when the capability status is `available`; do not infer that a quiet stream means no process activity occurred.
 
 The repository's [Linux collector workflow](../.github/workflows/linux-collector.yml) runs the required live checks as root on Ubuntu 22.04 and 24.04. A collector unavailable in that environment fails CI rather than silently skipping validation.

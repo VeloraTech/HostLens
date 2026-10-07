@@ -1,8 +1,11 @@
 import struct
 import unittest
 import errno
+import threading
+from nativerelay.model import Event, Process
+from nativerelay.stream import EventStream
 from pathlib import Path
-from collectors.linux.collector import LinuxCollector, CN_IDX_PROC, CN_VAL_PROC, PROC_EVENT_FORK
+from collectors.linux.collector import LinuxCollector, CN_IDX_PROC, CN_VAL_PROC, PROC_EVENT_FORK, FAN_EVENT_METADATA_FMT, FAN_Q_OVERFLOW, NLMSG_OVERRUN
 from nativerelay.model import EventType, CollectorStatus
 
 class LinuxParserTests(unittest.TestCase):
@@ -33,6 +36,66 @@ class LinuxParserTests(unittest.TestCase):
         collector._caps = collector._initial_capabilities()
         collector.health = {"errors": []}
         self.assertEqual(next(c for c in collector.capabilities if c.event_type == EventType.FILE_CREATED).status, CollectorStatus.UNSUPPORTED)
+    def test_fanotify_overflow_packet_is_reported_with_sequence(self):
+        collector = LinuxCollector.__new__(LinuxCollector)
+        collector._publish_lock = threading.Lock()
+        collector._sequence = 9
+        collector._stream = EventStream(4)
+        collector.name = "linux-kernel"
+        collector.health = {"errors": []}
+        collector._parse_fanotify_data(struct.pack(FAN_EVENT_METADATA_FMT, 24, 3, 0, 24, FAN_Q_OVERFLOW, -1, 0))
+        report = collector._stream.losses["linux-kernel"]["fanotify_queue_overflow"]
+        self.assertTrue(report["unknown_count"])
+        self.assertEqual(report["last_sequence"], 9)
+        self.assertEqual(collector._sequence, 10)
+        self.assertEqual(collector.status["loss_generation"], 1)
+        self.assertEqual(collector.status["losses"]["linux-kernel"]["fanotify_queue_overflow"]["unknown_count"], True)
+    def test_cn_proc_netlink_overrun_is_reported_as_native_loss(self):
+        collector = LinuxCollector.__new__(LinuxCollector)
+        collector._publish_lock = threading.Lock()
+        collector._sequence = 12
+        collector._stream = EventStream(4)
+        collector.name = "linux-kernel"
+        collector._parse_proc_packet(struct.pack("=IHHII", 16, NLMSG_OVERRUN, 0, 1, 0))
+        report = collector._stream.losses["linux-kernel"]["cn_proc_netlink_overrun"]
+        self.assertTrue(report["unknown_count"])
+        self.assertEqual(report["last_sequence"], 12)
+        self.assertEqual(collector._sequence, 13)
+    def test_native_loss_reserves_sequence_and_reports_unknown_count(self):
+        collector = LinuxCollector.__new__(LinuxCollector)
+        collector._publish_lock = threading.Lock()
+        collector._sequence = 4
+        collector._stream = EventStream(1)
+        collector.name = "linux-kernel"
+        collector.health = {"dropped": 0, "native_losses": {}, "errors": []}
+        collector._record_native_loss("fanotify_queue_overflow", count=None)
+        report = collector._stream.losses["linux-kernel"]["fanotify_queue_overflow"]
+        self.assertEqual(report["occurrences"], 1)
+        self.assertEqual(report["known_dropped"], 0)
+        self.assertTrue(report["unknown_count"])
+        self.assertEqual(report["last_sequence"], 4)
+        self.assertEqual(collector._sequence, 5)
+
+    def test_linux_stream_drop_creates_sequence_gap_and_loss_report(self):
+        collector = LinuxCollector.__new__(LinuxCollector)
+        collector._publish_lock = threading.Lock()
+        collector._sequence = 0
+        collector._stream = EventStream(1)
+        collector.name = "linux-kernel"
+        collector.health = {"dropped": 0, "native_losses": {}, "errors": []}
+        first = Event(EventType.FILE_OPENED, "linux", collector.name, Process(10))
+        second = Event(EventType.FILE_OPENED, "linux", collector.name, Process(10))
+        collector._publish(first)
+        collector._publish(second)
+        self.assertEqual(collector._stream.dropped, 1)
+        queued = collector._stream.receive()
+        self.assertEqual(queued.sequence, 0)
+        third = Event(EventType.FILE_OPENED, "linux", collector.name, Process(10))
+        collector._publish(third)
+        self.assertEqual(collector._stream.receive().sequence, 2)
+        report = collector._stream.losses["linux-kernel"]["event_stream_full"]
+        self.assertEqual(report["known_dropped"], 1)
+        self.assertEqual(report["last_sequence"], 1)
     def test_connector_ack_controls_capability_state(self):
         collector = LinuxCollector.__new__(LinuxCollector)
         collector.scope = Path("/controlled/scope")

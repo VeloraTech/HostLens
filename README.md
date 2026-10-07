@@ -15,7 +15,7 @@ The Linux collector uses the kernel process connector (`NETLINK_CONNECTOR/CN_PRO
 | `file.modified` | Best effort | `fanotify` modification notification; does not report changed bytes or guarantee durable storage. |
 | `file.created`, `file.deleted`, `file.renamed` | Unsupported | Not emitted; no inference from directory watchers. |
 
-Capabilities distinguish supported (implemented but not started), available (active), degraded, permission-denied, unavailable, and unsupported states through the capability API/CLI. Queue loss and collector errors are available through collector health. No file contents or environment values are read. Process argv collection is opt-in because arguments can contain secrets.
+Capabilities distinguish supported (implemented but not started), available (active), degraded, permission-denied, unavailable, and unsupported states through the capability API/CLI. Stream-full drops are counted exactly; fanotify overflow is reported with an unknown loss count. Inspect the stream loss ledger and Linux collector status even during receive timeouts. CN_PROC does not expose precise loss accounting in Phase 1. No file contents or environment values are read. Process argv collection is opt-in because arguments can contain secrets.
 
 ## Run locally
 

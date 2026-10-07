@@ -35,14 +35,16 @@ def main(argv=None):
         collector.start(stream)
         print("NativeRelay Linux observe (Ctrl-C to stop)", file=sys.stderr)
         last_dropped = -1
+        last_loss_generation = -1
         while True:
             try: event = stream.receive(timeout=1)
             except TimeoutError:
                 status = collector.status
-                if status["errors"] or status["dropped"] != last_dropped:
+                if status["errors"] or status["dropped"] != last_dropped or status["loss_generation"] != last_loss_generation:
                     print(json.dumps({"collector_status": status}), file=sys.stderr)
                     collector.health["errors"].clear()
                     last_dropped = status["dropped"]
+                    last_loss_generation = status["loss_generation"]
                 continue
             print(event.to_json() if args.json else _human(event), flush=True)
     except KeyboardInterrupt:

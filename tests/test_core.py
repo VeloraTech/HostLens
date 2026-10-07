@@ -29,10 +29,17 @@ class CoreTests(unittest.TestCase):
     def test_bounded_stream_and_timeout(self):
         stream = EventStream(1); event = self.make_event()
         self.assertTrue(stream.publish(event)); self.assertFalse(stream.publish(event))
-        self.assertEqual(stream.dropped, 1); self.assertEqual(stream.receive(), event)
+        self.assertEqual(stream.dropped, 1)
+        self.assertEqual(stream.loss_generation, 1)
+        overflow = stream.losses["test"]["event_stream_full"]
+        self.assertEqual(overflow["known_dropped"], 1)
+        self.assertEqual(overflow["last_sequence"], 7)
+        self.assertEqual(stream.receive(), event)
         with self.assertRaises(TimeoutError): stream.receive(timeout=0)
         stream.close()
         with self.assertRaises(StreamClosed): stream.receive()
+        self.assertFalse(stream.publish(event))
+        self.assertEqual(stream.losses["test"]["event_stream_closed"]["known_dropped"], 1)
         buffered = EventStream(1)
         self.assertTrue(buffered.publish(event))
         buffered.close()
