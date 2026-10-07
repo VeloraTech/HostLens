@@ -46,6 +46,6 @@ The platform-neutral event model, bounded stream, and collector contract live in
 
 ## Project status
 
-Phase 1 is an initial, Linux-only implementation and has not been validated on a Linux host in this development environment. Treat the API as pre-release; do not rely on it for complete audit coverage. See the capability and limitations documentation before use.
+Phase 1 is an initial, Linux-only implementation and remains pre-release. A controlled fanotify smoke test passed under root in WSL2 on Linux 6.6.87; CN_PROC did not acknowledge subscriptions from the WSL distro's PID namespace, so process lifecycle has not yet been live-validated on a host in the kernel's initial PID namespace. Do not rely on it for complete audit coverage. See the capability and limitations documentation before use.
 
 MIT licensed. No cloud service, account, network connection, or remote telemetry is required.

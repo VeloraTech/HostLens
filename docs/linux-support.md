@@ -39,4 +39,8 @@ python -m nativerelay.cli observe --scope /workspace --json
 
 ## Validation status
 
-Unit tests exercise normalized models, stream limits, and the process connector decoder. Privileged fanotify and live kernel integration tests must run on supported Linux kernels in a Linux CI/host environment. The initial implementation has not been run on Linux in the current Windows development environment; verify kernel behavior before production reliance.
+Deterministic tests exercise normalized models, stream limits, connector packet parsing, acknowledgement handling, and permission/unsupported capability states. The opt-in integration tests use a temporary child process and temporary file.
+
+The current development host's WSL2 kernel (`6.6.87.2-microsoft-standard-WSL2`) passed the root fanotify open/modify attribution test; the unprivileged fanotify test correctly reported `EPERM`. CN_PROC did not acknowledge a subscription in either the ordinary distro user or its root user namespace, so the process integration test skipped. The WSL distro runs in a non-initial PID namespace; the kernel's CN_PROC handler returns without acknowledging requests outside the initial PID/user namespaces ([kernel handler](https://github.com/torvalds/linux/blob/master/drivers/connector/cn_proc.c#L1815-L1829)). This is an environment limitation, not evidence of CN_PROC behavior on a normal Linux VM or host. Run the process test on a Linux host in the initial PID namespace before claiming process lifecycle support has passed live validation.
+
+The repository's [Linux collector workflow](../.github/workflows/linux-collector.yml) runs the required live checks as root on Ubuntu 22.04 and 24.04. A collector unavailable in that environment fails CI rather than silently skipping validation.

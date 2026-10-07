@@ -1,0 +1,36 @@
+name: Linux collector validation
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  linux-kernel-integration:
+    name: Ubuntu ${{ matrix.os }} kernel integration
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-24.04]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Run platform-neutral and collector parser tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Run live CN_PROC and fanotify tests
+        env:
+          NATIVERELAY_LINUX_INTEGRATION: "1"
+          NATIVERELAY_LINUX_INTEGRATION_REQUIRED: "1"
+        run: sudo --preserve-env=PATH,NATIVERELAY_LINUX_INTEGRATION,NATIVERELAY_LINUX_INTEGRATION_REQUIRED python -m unittest discover -s tests -p test_linux_integration.py -v

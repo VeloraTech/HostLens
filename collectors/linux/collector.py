@@ -109,7 +109,8 @@ class LinuxCollector(Collector):
             deadline = time.monotonic() + 2.0
             while self.health["process"] != "available":
                 remaining = deadline - time.monotonic()
-                if remaining <= 0: raise TimeoutError("CN_PROC subscription acknowledgement timed out")
+                if remaining <= 0:
+                    raise TimeoutError("CN_PROC sent no subscription acknowledgement; process events may be disabled or this PID namespace may not be the kernel's initial namespace")
                 sock.settimeout(remaining)
                 self._parse_proc_packet(sock.recv(65536))
                 if self.health["process"] in (CollectorStatus.PERMISSION_DENIED.value, CollectorStatus.UNAVAILABLE.value): break

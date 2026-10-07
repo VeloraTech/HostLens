@@ -13,7 +13,10 @@ Project scope, design principles, initial event model, and platform research wer
 - [x] Caller-selected directory scope and health reporting
 - [x] Developer CLI and local JSON output
 - [x] Core/decoder tests and implementation-limit documentation
-- [ ] Linux-host integration verification across supported kernels
+- [x] Opt-in controlled Linux process/filesystem integration test harness
+- [x] fanotify open/modify attribution validated on WSL2 Linux 6.6 (root)
+- [ ] CN_PROC process lifecycle validation in initial PID namespace (Linux CI)
+- [ ] Run Linux-host integration verification across supported kernels
 - [ ] Improve connector overflow/loss detection
 
 This implementation is pre-release and has not yet been validated on a Linux host in the current development environment. It supports process start/exit and best-effort file open/modified events. File create/delete/rename are unsupported.
