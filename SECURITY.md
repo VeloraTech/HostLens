@@ -112,3 +112,4 @@ Security research should follow the same evidence-based approach used throughout
 This policy applies to the NativeRelay project and its official source code.
 
 Third-party applications built using NativeRelay may introduce their own vulnerabilities or security requirements. Such issues should generally be reported to the maintainers of the affected application.
+
