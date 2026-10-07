@@ -33,4 +33,4 @@ jobs:
         env:
           NATIVERELAY_LINUX_INTEGRATION: "1"
           NATIVERELAY_LINUX_INTEGRATION_REQUIRED: "1"
-        run: sudo --preserve-env=PATH,NATIVERELAY_LINUX_INTEGRATION,NATIVERELAY_LINUX_INTEGRATION_REQUIRED python -m unittest discover -s tests -p test_linux_integration.py -v
+        run: sudo env -i HOME=/root PATH="$PATH" NATIVERELAY_LINUX_INTEGRATION=1 NATIVERELAY_LINUX_INTEGRATION_REQUIRED=1 "$(command -v python)" -m unittest discover -s tests -p test_linux_integration.py -v
