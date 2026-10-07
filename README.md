@@ -46,6 +46,6 @@ The platform-neutral event model, bounded stream, and collector contract live in
 
 ## Project status
 
-Phase 1 is an initial, Linux-only implementation and remains pre-release. A controlled fanotify smoke test passed under root in WSL2 on Linux 6.6.87; CN_PROC did not acknowledge subscriptions from the WSL distro's PID namespace, so process lifecycle has not yet been live-validated on a host in the kernel's initial PID namespace. Do not rely on it for complete audit coverage. See the capability and limitations documentation before use.
+Phase 1 is complete for the documented event set and remains pre-release. Controlled CN_PROC process-lifecycle and fanotify file-event integration tests passed in the privileged GitHub Actions Linux workflow; the workflow targets Ubuntu 22.04 and 24.04. The fanotify smoke test also passed under root in WSL2 on Linux 6.6.87. WSL could not validate CN_PROC because the distro uses a non-initial PID namespace. Process connector loss accounting is a known follow-up, and NativeRelay does not provide complete audit coverage. See the capability and limitations documentation before use.
 
 MIT licensed. No cloud service, account, network connection, or remote telemetry is required.

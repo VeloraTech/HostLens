@@ -20,6 +20,6 @@ The tests launch a short-lived controlled child and create/write a file under a 
 
 Set `NATIVERELAY_LINUX_INTEGRATION_REQUIRED=1` in privileged CI to fail instead of skip when either kernel mechanism is unavailable. The Linux workflow runs this strict mode as root so missing CN_PROC or fanotify coverage makes the job fail visibly.
 
-Validation on the current WSL2 Linux 6.6.87 kernel: fanotify passed as root and correctly failed without privilege. CN_PROC subscription timed out for both the normal distro user and root because this distro is in a non-initial PID namespace. Its live process test remains unverified until run on a normal Linux host/VM.
+The controlled CN_PROC and fanotify integration tests passed in the privileged GitHub Actions Linux workflow targeting Ubuntu 22.04 and 24.04. On the current WSL2 Linux 6.6.87 kernel, fanotify passed as root and correctly failed without privilege. CN_PROC subscription timed out for both the normal distro user and root because the distro uses a non-initial PID namespace; the hosted Linux CI run provides the live CN_PROC validation.
 
 The CLI emits one compact JSON event per line with `--json`. Human-readable output is the default. Ctrl-C shuts down both collector threads. The internal stream has a configurable bounded queue; overflow drops new events and increments a counter.
