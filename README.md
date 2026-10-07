@@ -25,7 +25,10 @@ Python 3.11 or newer, Linux, and no third-party runtime dependencies are require
 python -m nativerelay.cli capabilities --scope /path/to/workspace
 python -m nativerelay.cli observe --scope /path/to/workspace
 python -m nativerelay.cli observe --scope /path/to/workspace --json
+nativerelay run --format json --scope /path/to/workspace
 ```
+
+`nativerelay run --format json` is the installed console command for machine consumers. It writes compact JSON Lines to stdout: normalized event objects retain the event schema, while control records use `record_type` values `nativerelay.status` and `nativerelay.loss` (both schema version 1). Status records report startup, capability/health changes, and shutdown; loss records include the loss generation and cumulative loss ledger. Human diagnostics go to stderr. The command uses the current directory as its default scope and exits cleanly on Ctrl-C or SIGTERM. Exit codes are 0 for clean shutdown, 2 for invalid arguments, 3 when collection cannot start or no source is available, and 4 for runtime failure. Loss is reported, never recovered.
 
 The process connector may be unavailable depending on kernel configuration and privilege; subscribing to its netlink multicast group generally requires root or `CAP_NET_ADMIN`. `fanotify` mount monitoring requires `CAP_SYS_ADMIN`; the CLI reports each degraded state. Use least privilege that satisfies the kernel on the target system. `--include-command` opts into process argument collection and should be used with care.
 

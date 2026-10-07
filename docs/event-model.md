@@ -37,3 +37,13 @@ A timeout from `EventStream.receive(timeout=...)` means no event arrived before 
 ```
 
 Consumers should branch on known event types and schema version, query capabilities rather than infer support from silence, and inspect stream/collector health for gaps. NativeRelay does not identify applications, AI agents, sessions, or runs.
+
+
+## Machine CLI JSONL
+
+`nativerelay run --format json` writes event objects and control objects as compact JSON Lines to stdout. Event records are exactly the canonical `Event.to_json()` shape above. Control records have `schema_version: 1`, a timestamp, and `record_type`:
+
+- `nativerelay.status` reports current collection state and capabilities, then a final `stopped` or `failed` state. Status can be emitted again when capabilities or health change. Final status includes `clean_shutdown`, `shutdown_signal`, and `exit_code`.
+- `nativerelay.loss` reports the updated `loss_generation` and cumulative `losses` ledger whenever a new loss report is detected. The ledger can include exact stream rejections and unknown-count native overflow reports.
+
+Diagnostics are written to stderr, leaving stdout parseable as JSONL. Consumers must treat a timeout or absence of event lines as silence only while status remains usable and no loss has been reported. A loss record makes the affected interval uncertain; it does not imply recovery or replay.
