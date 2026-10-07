@@ -7,6 +7,7 @@ used; permission and queue errors are surfaced in capabilities/health.
 from __future__ import annotations
 import ctypes
 import errno
+from dataclasses import replace
 import os
 import platform
 import re
@@ -52,11 +53,13 @@ class LinuxCollector(Collector):
         self._sockets = []
         self._threads = []
         self._stop = threading.Event()
+        self._publish_lock = threading.Lock()
+        self._sequence = 0
         self.health = {"process": "not_started", "filesystem": "not_started", "dropped": 0, "errors": []}
         self._caps = self._initial_capabilities()
 
     def _initial_capabilities(self):
-        return tuple(Capability(t, CollectorStatus.DEGRADED if t in (EventType.PROCESS_STARTED, EventType.PROCESS_EXITED, EventType.FILE_OPENED, EventType.FILE_MODIFIED) else CollectorStatus.UNSUPPORTED,
+        return tuple(Capability(t, CollectorStatus.SUPPORTED if t in (EventType.PROCESS_STARTED, EventType.PROCESS_EXITED, EventType.FILE_OPENED, EventType.FILE_MODIFIED) else CollectorStatus.UNSUPPORTED,
                  "collector has not started" if t in (EventType.PROCESS_STARTED, EventType.PROCESS_EXITED, EventType.FILE_OPENED, EventType.FILE_MODIFIED) else
                  "This collector does not infer namespace changes from file content notifications",
                  "host process table" if t.value.startswith("process") else str(self.scope),
@@ -71,6 +74,8 @@ class LinuxCollector(Collector):
     def start(self, stream: EventStream):
         if self._stream is not None: raise RuntimeError("collector already started")
         self._stop = threading.Event()
+        self._publish_lock = threading.Lock()
+        self._sequence = 0
         self.health = {"process": "not_started", "filesystem": "not_started", "dropped": 0, "errors": []}
         self._caps = self._initial_capabilities()
         self._stream = stream
@@ -86,6 +91,7 @@ class LinuxCollector(Collector):
                 else: sock.close()
             except OSError: pass
         for thread in self._threads: thread.join(timeout=2)
+        self._stream.close()
         self._sockets.clear(); self._threads.clear(); self._stream = None
 
     def _failure(self, subsystem, exc):
@@ -270,8 +276,11 @@ class LinuxCollector(Collector):
             except OSError: pass
 
     def _publish(self, event):
-        if self._stream is not None and not self._stream.publish(event):
-            self.health["dropped"] += 1
+        with self._publish_lock:
+            sequenced = replace(event, sequence=self._sequence)
+            self._sequence += 1
+            if self._stream is not None and not self._stream.publish(sequenced):
+                self.health["dropped"] += 1
 
     def _set_status(self, event_types, status, reason):
         self._caps = tuple(Capability(c.event_type, status if c.event_type in event_types else c.status,

@@ -15,7 +15,7 @@ The Linux collector uses the kernel process connector (`NETLINK_CONNECTOR/CN_PRO
 | `file.modified` | Best effort | `fanotify` modification notification; does not report changed bytes or guarantee durable storage. |
 | `file.created`, `file.deleted`, `file.renamed` | Unsupported | Not emitted; no inference from directory watchers. |
 
-Unsupported, permission-denied, and unavailable capabilities are visible through the capability API/CLI. Queue loss and collector errors are available through collector health. No file contents or environment values are read. Process argv collection is opt-in because arguments can contain secrets.
+Capabilities distinguish supported (implemented but not started), available (active), degraded, permission-denied, unavailable, and unsupported states through the capability API/CLI. Queue loss and collector errors are available through collector health. No file contents or environment values are read. Process argv collection is opt-in because arguments can contain secrets.
 
 ## Run locally
 
@@ -31,7 +31,30 @@ The process connector may be unavailable depending on kernel configuration and p
 
 ## Embed
 
-The platform-neutral event model, bounded stream, and collector contract live in `nativerelay`. A consumer can receive events from `EventStream.receive(timeout=...)`; events serialize through `Event.to_json()`. Linux-specific collection is isolated in `collectors.linux`.
+The platform-neutral event model, bounded stream, and collector contract live in `nativerelay`; import platform-specific collectors only at the application boundary. A consumer receives normalized `Event` objects, handles timeout and shutdown explicitly, and may serialize with `Event.to_json()`:
+
+```python
+from nativerelay import EventStream, StreamClosed
+from collectors.linux import LinuxCollector
+
+stream = EventStream(capacity=1024)
+collector = LinuxCollector("/workspace")
+collector.start(stream)
+try:
+    while True:
+        try:
+            event = stream.receive(timeout=1.0)
+        except TimeoutError:
+            # Consult collector.capabilities and collector.status before treating silence as meaningful.
+            continue
+        print(event.type.value, event.process.pid, event.resource)
+except StreamClosed:
+    pass
+finally:
+    collector.stop()
+```
+
+The event contract does not require consumers to import `collectors.linux`; future macOS and Windows collectors can implement the common `Collector` interface while reporting their own capabilities.
 
 ## Documentation
 

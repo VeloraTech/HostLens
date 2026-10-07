@@ -3,13 +3,16 @@
 NativeRelay separates the event contract from OS-specific collection.
 
 ```text
+Operating system
+        ↓
+Platform collector (Linux reference; macOS and Windows future)
+        ↓
+NativeRelay normalized Event / bounded EventStream
+        ↓
 Consumer
-   │ EventStream / normalized Event
-NativeRelay core (model, capability, bounded stream, collector contract)
-   │
-Linux collector ── CN_PROC process connector
-              └── fanotify file notifications
 ```
+
+Linux uses CN_PROC and fanotify; the core event, capability, and stream contract has no Linux-specific imports. macOS and Windows collectors remain future implementations.
 
 The `nativerelay` package owns event types, validation/serialization, capability states, a collector contract, and a bounded in-process stream. It imports no Linux APIs. `collectors/linux` owns the kernel mechanisms, `/proc` metadata lookup, path scoping, and Linux health reporting. macOS and Windows can implement the same collector contract later without making the core depend on platform APIs.
 

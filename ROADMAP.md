@@ -14,9 +14,8 @@ Project scope, design principles, initial event model, and platform research wer
 - [x] Developer CLI and local JSON output
 - [x] Core/decoder tests and implementation-limit documentation
 - [x] Opt-in controlled Linux process/filesystem integration test harness
-- [x] fanotify open/modify attribution validated on WSL2 Linux 6.6 (root)
 - [x] CN_PROC process lifecycle validation through privileged GitHub Actions Linux integration tests
-- [x] Run Linux integration verification through the Ubuntu 22.04 and 24.04 CI matrix
+- [x] Linux integration verification through the Ubuntu 22.04 and 24.04 CI matrix
 - [x] fanotify open/modify attribution validated on WSL2 Linux 6.6 (root)
 
 Phase 1 is complete for the documented event set. The implementation remains pre-release and does not promise complete audit coverage. It supports process start/exit and best-effort file open/modified events. File create/delete/rename are unsupported. The collector reports fanotify overflow and bounded-stream drops; precise CN_PROC loss accounting remains a Phase 2 reliability task.
