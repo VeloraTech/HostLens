@@ -1,4 +1,5 @@
 # NativeRelay
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/nativerelay?period=total&units=INTERNATIONAL_SYSTEM&left_color=BLACK&right_color=GREEN&left_text=downloads)](https://pepy.tech/projects/nativerelay)
 
 NativeRelay is a local-first, embeddable operating-system observability layer for developer tools. It normalizes the event interface across platforms, while platform-specific collectors expose different capabilities and coverage.
 
